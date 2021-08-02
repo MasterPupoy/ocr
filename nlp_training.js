@@ -2,32 +2,6 @@ const { NlpManager } = require('node-nlp');
 const fs = require('fs');
 const process = require('process');
 
-const desc_file = fs.readFileSync('./job_description.json');
-const job_file = fs.readFileSync('./job_title.json');
-
-const description = JSON.parse(desc_file);
-const jobTitle = JSON.parse(job_file);
-
-/* 
-description and jobtitle array is in string 
-so parsing it was need for now. 
-insert dummy corpus object
-*/
-const corpus = {
-  name : 'job description',
-  locale : 'en-US',
-  data : [
-    {
-      intent : 'job.description',
-      utterances : description
-    },
-    {
-      intent : 'job.title',
-      utterances : jobTitle
-    }
-  ]
-};
-
 //manager.addDocument('en', 'MongoDB Atlas', 'skill');
 //manager.addDocument('en', 'Renz', 'name');
 //manager.addDocument('en', 'Danielle', 'name');
@@ -64,7 +38,7 @@ const corpus = {
 /*
 nlp class 
 */
-class nlp {
+module.exports = class nlp {
   constructor(){
     this.manager = new NlpManager({ language : ['en'], forceNER: true })
   }
@@ -73,7 +47,7 @@ class nlp {
    * 
    * @param {object} corpus - Used for training the NER
    */
-  async initialize(corpus) {
+  async initialize(corpus, isTrain = false) {
 
     /* 
     check for models or train here
@@ -84,17 +58,38 @@ class nlp {
     //await this.manager.addCorpus(corpus)
     //await this.manager.train()
 
-    this.manager.load('./model.nlp');
+    if(fs.existsSync('./model.nlp') && !isTrain){
+      console.log('no train needed');
+      this.manager.load('./model.nlp');
+    }else{
+      if (corpus) {
+        console.log('training needed! Training...');
+        this.manager.addCorpus(corpus);
+        // this.manager.addCorpus('./skills.json');
+        this.manager.train();
+        this.manager.save();
+        console.log('Train Done!');
+      }
+    }
   }
 
-  async evaluate() {
+  async evaluate(extracted) {
 
     // command line interface for trying out data
-    process.stdout.write('Enter any to statements to classify : \n')
-    process.stdin.on('data', async (data) => {
-      const response = await this.manager.process('en', data.toString().trim())
-      console.log(response);
-    });
+    // process.stdout.write('Enter any to statements to classify : \n')
+    // process.stdin.on('data', async (data) => {
+    return await Promise.all(extracted.map(async(data) => {
+      const evaluate = await this.manager.process('en', data.toString().trim());
+      if (evaluate.intent !== 'None') {
+        return {
+          statement: data.toString().trim(),
+          intent: evaluate.intent
+        }
+      }
+    }));
+    
+    // console.log(response);
+    // });
   };
 
   /**
@@ -112,15 +107,13 @@ class nlp {
   }
 }
 
-const n = new nlp();
+// const n = new nlp();
 /*
   passing in corpus in case you're training.
   It will be ignored if you're using load()
   to mount models.
 */
 
-n.initialize(corpus);
+// n.initialize(corpus);
 // cli setup
-n.evaluate()
-
-
+// n.evaluate();
