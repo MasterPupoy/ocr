@@ -10,39 +10,8 @@ const options = {
     'alphanumeric'
   ]
 }
-const desc_file = fs.readFileSync('./job_description.json');
-const job_file = fs.readFileSync('./job_title.json');
 
-const description = JSON.parse(desc_file);
-const jobTitle = JSON.parse(job_file);
-
-/* 
-description and jobtitle array is in string 
-so parsing it was need for now. 
-insert dummy corpus object
-*/
-const filteredDescription = description.filter(function (el) {
-  return el != null;
-});
-
-const filteredJobTitle = jobTitle.filter(function (el) {
-  return el != null;
-});
-const corpus = {
-  name : 'job description',
-  locale : 'en-US',
-  data : [
-    {
-      intent : 'job.description',
-      utterances : filteredDescription
-    },
-    {
-      intent : 'job.title',
-      utterances : filteredJobTitle
-    }
-  ]
-};
-
+const corpus = JSON.parse(fs.readFileSync('./corpus.json'));
 
 const NLP = new nlp();
 
@@ -55,35 +24,29 @@ const processor = pdf_extract(path, options, function(err){
   }
 });
 
-processor.on('complete', function(data) {
+processor.on('complete', async function(data) {
   // inspect(data, 'extracted text pages');
   const person_data = data.text_pages;
   // const split = person_data[0].split('\n');
 
   const extract = async() => {
     return Promise.all(person_data.map((page) => {
-    const split = page.split('\n');
-    const filterEmpty = split.filter((text) => {
-      return text !== '';
-    });
-    return NLP.evaluate(filterEmpty);
-  }));
-}
-  
-//extracted data here
-  extract().then(data => {
-    // console.log(data[0]);
-    // let filteredData = [];
-    const filtered = data.map(result => {
-      return result.filter(function (el) {
+      const split = page.split('\n');
+      const filterEmpty = split.filter((text) => {
+        return text !== '';
+      });
+      return NLP.evalTessOutput(filterEmpty);
+    }));
+  }
+
+  const result = await extract();
+  const final = result.map(data => {
+      return data.filter(function (el) {
         return el != null;
       });
     });
-
-    // final extracted array
-    console.log(filtered);
-  });
-  // console.log(filteredSplit);
+  // console.log(final);
+  // callback(null, final);
 });
 
 processor.on('err', function(err) {

@@ -73,23 +73,14 @@ module.exports = class nlp {
     }
   }
 
-  async evaluate(extracted) {
+  async evaluate() {
 
     // command line interface for trying out data
     // process.stdout.write('Enter any to statements to classify : \n')
-    // process.stdin.on('data', async (data) => {
-    return await Promise.all(extracted.map(async(data) => {
-      const evaluate = await this.manager.process('en', data.toString().trim());
-      if (evaluate.intent !== 'None') {
-        return {
-          statement: data.toString().trim(),
-          intent: evaluate.intent
-        }
-      }
-    }));
-    
-    // console.log(response);
-    // });
+    process.stdin.on('data', async (data) => {
+      const response = await this.manager.process('en', data.toString().trim());
+      console.log(response);
+    });
   };
 
   /**
@@ -101,6 +92,15 @@ module.exports = class nlp {
       function for processing
       tess ouput
     */
+      return await Promise.all(input.map(async(data) => {
+        const evaluate = await this.manager.process('en', data.toString().trim());
+        if (evaluate.intent !== 'None') {
+          return {
+            statement: data.toString().trim(),
+            intent: evaluate.intent
+          }
+        }
+      }));
 
     // return nlp array of output 
 
