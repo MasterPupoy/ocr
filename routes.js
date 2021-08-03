@@ -1,9 +1,22 @@
 const router = require('express').Router();
 const uri = process.env.DB_URI || 'mongo uri'
 const { MongoClient } = require('mongodb');
+const multer = require('multer');
+const path = require('path');
 const pdf_extract = require('pdf-extract');
 const nlp = require('./nlp_training');
 const fs = require('fs');
+const storage = multer.diskStorage({
+  destination: function(req, file, cb) {
+      cb(null, 'uploads/');
+  },
+
+  // By default, multer removes file extensions so let's add them back
+  filename: function(req, file, cb) {
+      cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
+  }
+});
+const upload = multer({ storage:storage })
 
 
 const client = new MongoClient(uri, {
@@ -11,6 +24,7 @@ const client = new MongoClient(uri, {
 });
 
 const testCollection = client.db('local').collection('test');
+
 
 
 /*
@@ -48,9 +62,12 @@ router.post('/applicant/:applicant_id', (req, res) => {
 })
 
 
-router.post('/extract-pdf', (req, res) => {
-  console.log(req.body.resume);
-  const path = './resume.pdf';
+router.post('/extract-pdf', upload.single('resume'), (req, res) => {  
+  if (!req.file) {
+      return res.send('Please select a file to upload');
+  }
+  
+  const path = req.file.path;
   const options = {
     type : 'ocr',
     ocr_flags: [
@@ -93,6 +110,7 @@ router.post('/extract-pdf', (req, res) => {
           return el != null;
         });
       });
+      fs.unlinkSync(path)
       res.json(final);
     // console.log(final);
     // callback(null, final);
@@ -100,6 +118,8 @@ router.post('/extract-pdf', (req, res) => {
   
   processor.on('err', function(err) {
     inspect(err, 'error while extracting pages');
+    fs.unlinkSync(path)
+      res.json(final);
     return callback(err);
   })
   
