@@ -123,3 +123,6 @@ model.nlp
 #csv and pdf files
 .csv
 .pdf
+
+#uploads folder
+uploads/
