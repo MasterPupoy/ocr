@@ -66,6 +66,7 @@ router.post('/applicant/:applicant_id', (req, res) => {
 router.post('/extract-pdf', upload.single('resume'), (req, res) => {  
   // multer middleware for uploading/storing pdf first to the server disk
   // req.file contains the file information
+  console.log(req.file)
   if (!req.file) {
       return res.send('Please select a file to upload');
   }
@@ -117,9 +118,9 @@ router.post('/extract-pdf', upload.single('resume'), (req, res) => {
         });
       });
       // deletes pdf file after process is done
-      fs.unlinkSync(path)
+      // fs.unlinkSync(path)
       // return the final extracted and clustered data to the client
-      res.json(final);
+      res.json({final,path});
   });
   
   // listens to pdf-extract errors
