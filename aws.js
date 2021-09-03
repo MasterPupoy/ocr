@@ -10,7 +10,7 @@ const s3 = new AWS.S3({
     secretAccessKey: secretKey
 });
 
-module.exports = uploadFileToAws = (file) => {
+module.exports = uploadFileToAws = async (file) => {
     const filename = file.filename;
     const fileContent = fs.readFileSync(file.path);
     const params = {
@@ -20,15 +20,17 @@ module.exports = uploadFileToAws = (file) => {
         ACL: 'public-read',
     }
 
-    s3.upload(params, (err, data) => {
+    const aws = new Promise((resolve, reject) => s3.upload(params, (err, data) => {
         if (err) {
             console.log('error');
             console.log(err);
-            // reject(err)
+            // return err;
+            reject(err)
         } else {
             console.log('success');
             // resolve(data.Location)
-            console.log(data);
+            resolve(data)
         }
-    })
+    }));
+    return await aws;
 }

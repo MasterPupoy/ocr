@@ -15,7 +15,6 @@ const storage = multer.diskStorage({
   // Change filename
   filename: function (req, file, cb) {
     cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
-    console.log(req);
   }
 });
 const upload = multer({ storage: storage });
@@ -69,10 +68,9 @@ router.post('/code', (req, res) => {
 })
 
 
-router.post('/extract-pdf', upload.single('resume'), (req, res) => {
+router.post('/extract-pdf', upload.single('resume'), async (req, res) => {
   // multer middleware for uploading/storing pdf first to the server disk
   // req.file contains the file information
-  console.log(req.file)
   if (!req.file) {
     return res.send('Please select a file to upload');
   }
@@ -82,7 +80,8 @@ router.post('/extract-pdf', upload.single('resume'), (req, res) => {
   const path = req.file.path;
 
   // console.log(req.file);
-  uploadFile(req.file);
+  const uploadedPath = await uploadFile(req.file);
+  console.log('uploadedAWS', uploadedPath);
   // pdf-extract options or rules for parsing data from pdf
   const options = {
     type: 'ocr',
@@ -120,16 +119,16 @@ router.post('/extract-pdf', upload.single('resume'), (req, res) => {
     // result from the loop operation
     const result = await extract();
     // filter any null or undefined values
-    console.log(result);
+    // console.log(result);
     const final = result.map(data => {
       return data.filter(function (el) {
         return el != null;
       });
     });
     // deletes pdf file after process is done
-    // fs.unlinkSync(path)
+    fs.unlinkSync(path)
     // return the final extracted and clustered data to the client
-    res.json({ final, path });
+    res.json({ final, path: uploadedPath.Location });
   });
 
   // listens to pdf-extract errors
