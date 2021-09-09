@@ -6,6 +6,7 @@ const path = require('path');
 const pdf_extract = require('pdf-extract');
 const nlp = require('./nlp_training');
 const fs = require('fs');
+const uniqid = require('uniqid');
 const storage = multer.diskStorage({
   destination: function(req, file, cb) {
       cb(null, 'uploads/');
@@ -13,7 +14,7 @@ const storage = multer.diskStorage({
 
   // Change filename
   filename: function(req, file, cb) {
-      cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
+      cb(null, file.fieldname + '-' + Date.now() + '-' + uniqid() + path.extname(file.originalname));
   }
 });
 const upload = multer({ storage:storage });
@@ -133,5 +134,9 @@ router.post('/extract-pdf', upload.single('resume'), (req, res) => {
   
 })
 
+//store the resume
+router.post('/save-pdf', upload.single('resume'), (req,res) => {
+  res.json({path: req.file.path})
+});
 
 module.exports = router;
