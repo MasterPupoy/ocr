@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start":"node main.js",
+    "start": "node main.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "local": "node -r dotenv/config main.js"
   },
@@ -23,6 +23,7 @@
     "node-nlp": "^4.22.1",
     "papaparse": "^5.3.1",
     "pdf-extract": "^1.0.11",
-    "request": "^2.88.2"
+    "request": "^2.88.2",
+    "uniqid": "^5.4.0"
   }
 }
